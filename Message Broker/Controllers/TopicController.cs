@@ -73,10 +73,7 @@ namespace Message_Broker.Controllers
         [Produces("application/json")]
         public async Task<Topic> Post([FromBody] Topic topic)
         {
-            var dilek = topic;
-            Console.WriteLine(topic.Id);
-            Console.WriteLine(topic.Name);
-
+        
             try
             {
                 await _context.Topics.AddAsync(topic);
