@@ -31,7 +31,9 @@ namespace Message_Broker.Controllers
             return topics;
         }
 
-        [HttpPost("Topic/{id}/messages")]
+       
+
+        [HttpPost("/{id}/messages")]
         public async Task<IActionResult> GetTopics(int id, [FromBody] Message message)
         {
 
@@ -51,9 +53,7 @@ namespace Message_Broker.Controllers
                 Message msg = new Message
                 {
                     TopicMessage = message.TopicMessage,
-                    ExpiresAfter = message.ExpiresAfter,
                     SubscriptionId = sub.ID,
-                    MessageStatus = message.MessageStatus
                 };
 
                 await _context.Messages.AddAsync(msg);
@@ -65,6 +65,78 @@ namespace Message_Broker.Controllers
             return Ok("Message has been addded");
         }
 
+        [HttpPost("/{id}/subscription")]
+        public async Task<IActionResult> PostTopicSubs(int id, [FromBody] Subscription subscription)
+        {
+
+            bool topics = await _context.Topics.AnyAsync(t => t.Id == id);
+
+            if (!topics)
+                return NotFound("Topic is not found");
+
+
+            subscription.TopicId = id;
+            await _context.Subscriptions.AddAsync(subscription);
+
+
+            await _context.SaveChangesAsync();
+
+            return Ok("Subscription is created");
+        }
+
+        [HttpPost("/{id}/subsMessage")]
+        public async Task<IActionResult> PostSubsMessage(int id)
+        {
+
+            bool subs = await _context.Subscriptions.AnyAsync(s => s.ID == id);
+            if (!subs)
+                return NotFound("Subscriptions not found");
+
+            var messages = await _context.Messages.Where(m => m.SubscriptionId == id).ToArrayAsync();
+
+            if (messages.Count() == 0)
+
+                return NotFound("No new message");
+
+
+            foreach (var msg in messages)
+            {
+                msg.MessageStatus = "RESQUESTED";
+                
+            }
+            await _context.SaveChangesAsync();
+            return Ok(messages);
+        }
+
+
+        [HttpPost("subscription/{id}/subsMessage")]
+        public async Task<IActionResult> PostSubsMessages(int id, int[] confs)
+        {
+
+            bool subs = await _context.Subscriptions.AnyAsync(s => s.ID == id);
+            if (!subs)
+                return NotFound("Subscriptions not found");
+
+
+            if (confs.Length < 0)
+                return BadRequest();
+
+            int count = 0;
+            foreach (int i in confs)
+            {
+                var msg = _context.Messages.FirstOrDefault(m => m.ID == i);
+
+                if (msg != null) {
+                    msg.MessageStatus = "SENT";
+                    await _context.SaveChangesAsync();
+                    count++;
+
+                }
+            }
+
+
+            return Ok($"Acknowledged {count}/{confs.Length} messagee");
+        }
 
 
 

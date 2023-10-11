@@ -13,8 +13,8 @@ namespace Message_Broker.Models
         public int SubscriptionId { get; set; }
 
         [Required]
-        public DateTime ExpiresAfter { get; set; }
-        [Required]
+        public DateTime ExpiresAfter { get; set; } = DateTime.Now.AddDays(1);
+        [Required] 
         public string MessageStatus { get; set; } = "NEW";
 
     }
